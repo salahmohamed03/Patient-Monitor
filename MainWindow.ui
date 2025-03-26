@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1000</width>
-    <height>700</height>
+    <height>732</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -163,67 +163,6 @@ QStatusBar QLabel {
 https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qcheckbox
 
 --------------------------------------------------------------------------- */
-QCheckBox {
-  background-color: #19232D;
-  color: #DFE1E2;
-  spacing: 4px;
-  outline: none;
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-QCheckBox:focus {
-  border: none;
-}
-
-QCheckBox QWidget:disabled {
-  background-color: #19232D;
-  color: #788D9C;
-}
-
-QCheckBox::indicator {
-  margin-left: 2px;
-  height: 14px;
-  width: 14px;
-}
-
-QCheckBox::indicator:unchecked {
-  image: url(&quot;:/qss_icons/dark/rc/checkbox_unchecked.png&quot;);
-}
-
-QCheckBox::indicator:unchecked:hover, QCheckBox::indicator:unchecked:focus, QCheckBox::indicator:unchecked:pressed {
-  border: none;
-  image: url(&quot;:/qss_icons/dark/rc/checkbox_unchecked_focus.png&quot;);
-}
-
-QCheckBox::indicator:unchecked:disabled {
-  image: url(&quot;:/qss_icons/dark/rc/checkbox_unchecked_disabled.png&quot;);
-}
-
-QCheckBox::indicator:checked {
-  image: url(&quot;:/qss_icons/dark/rc/checkbox_checked.png&quot;);
-}
-
-QCheckBox::indicator:checked:hover, QCheckBox::indicator:checked:focus, QCheckBox::indicator:checked:pressed {
-  border: none;
-  image: url(&quot;:/qss_icons/dark/rc/checkbox_checked_focus.png&quot;);
-}
-
-QCheckBox::indicator:checked:disabled {
-  image: url(&quot;:/qss_icons/dark/rc/checkbox_checked_disabled.png&quot;);
-}
-
-QCheckBox::indicator:indeterminate {
-  image: url(&quot;:/qss_icons/dark/rc/checkbox_indeterminate.png&quot;);
-}
-
-QCheckBox::indicator:indeterminate:disabled {
-  image: url(&quot;:/qss_icons/dark/rc/checkbox_indeterminate_disabled.png&quot;);
-}
-
-QCheckBox::indicator:indeterminate:focus, QCheckBox::indicator:indeterminate:hover, QCheckBox::indicator:indeterminate:pressed {
-  image: url(&quot;:/qss_icons/dark/rc/checkbox_indeterminate_focus.png&quot;);
-}
 
 /* QGroupBox --------------------------------------------------------------
 
@@ -2644,6 +2583,37 @@ PlotWidget {
               <string>Normal</string>
              </property>
             </widget>
+           </item>
+           <item row="3" column="0" colspan="2">
+            <widget class="QCheckBox" name="alarmEnabledCheckBox">
+             <property name="text">
+              <string>Enable Alarm Sounds</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0" colspan="2">
+            <layout class="QHBoxLayout" name="horizontalLayout_5">
+             <item>
+              <widget class="QPushButton" name="silenceAlarmButton">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>Silence Alarm</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="resetAlarmsButton">
+               <property name="text">
+                <string>Reset Alarms</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>

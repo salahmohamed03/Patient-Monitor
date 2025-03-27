@@ -3,6 +3,8 @@ import numpy as np
 from scipy import signal
 from PyQt5 import QtWidgets, uic, QtCore, QtGui
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
+from PyQt5.QtMultimedia import QSound
+from scipy.signal import welch
 
 # Don't import pyqtgraph or initialize any widgets at the module level
 # Import wfdb in the main function
@@ -31,7 +33,13 @@ class ArrhythmiaDetector:
         mean_hr = 60 / np.mean(rr_intervals)  # Convert to BPM
         
         return mean_hr
-    
+
+    def detect_dominant_frequency(self, ecg_signal, fs):
+        """Compute the dominant frequency of the ECG signal using Welch’s method"""
+        freqs, power = welch(ecg_signal, fs=fs)
+        peak_freq = freqs[np.argmax(power)]
+        return peak_freq
+
     def detect_tachycardia(self, heart_rate):
         """Detect tachycardia based on heart rate"""
         return heart_rate > self.tachycardia_threshold
@@ -39,7 +47,7 @@ class ArrhythmiaDetector:
     def detect_bradycardia(self, heart_rate):
         """Detect bradycardia based on heart rate"""
         return 0 < heart_rate < self.bradycardia_threshold
-    
+
     def detect_afib(self, ecg_signal, fs=250):
         """
         Detect atrial fibrillation based on RR interval irregularity
@@ -60,6 +68,8 @@ class ArrhythmiaDetector:
         
         return irregularity > self.afib_threshold
 
+        # peak_freq = self.detect_dominant_frequency(ecg_signal, fs)
+        # return peak_freq > 6
 
 class ECGMonitoringSystem(QtWidgets.QMainWindow):
     """Main application window for ECG Monitoring System"""
@@ -68,7 +78,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         super().__init__()
         
         # Load UI from file
-        uic.loadUi('mainWindwo.ui', self)
+        uic.loadUi('MainWindow.ui', self)
         
         # Initialize detector
         self.detector = ArrhythmiaDetector()
@@ -90,22 +100,26 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         self.sampling_rate = 250  # Default sampling rate
         self.data_index = 0
         self.is_monitoring = False
-        
+
+        self.afib_detected = False
+        self.tachycardia_detected = False
+        self.bradycardia_detected = False
+
         # Timer for real-time updates
         self.update_timer = QtCore.QTimer()
         self.update_timer.timeout.connect(self.update_plot)
         
         # Alarm status
         self.alarm_active = False
-        self.alarm_sound = None  # Would use QSound in a full implementation
+        self.alarm_sound = None  
         
         # Connect buttons
         self.loadDataButton.clicked.connect(self.load_data)
         self.saveDataButton.clicked.connect(self.save_data)
         self.startMonitoringButton.clicked.connect(self.start_monitoring)
         self.stopMonitoringButton.clicked.connect(self.stop_monitoring)
-        # self.silenceAlarmButton.clicked.connect(self.silence_alarm)
-        # self.resetAlarmsButton.clicked.connect(self.reset_alarms)
+        self.silenceAlarmButton.clicked.connect(self.silence_alarm)
+        self.resetAlarmsButton.clicked.connect(self.reset_alarms)
         
         # Menu actions
         self.actionLoad_ECG_Data.triggered.connect(self.load_data)
@@ -116,7 +130,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         
         # Initial UI setup
         self.stopMonitoringButton.setEnabled(False)
-        # self.silenceAlarmButton.setEnabled(False)
+        self.silenceAlarmButton.setEnabled(False)
         
         # Store wfdb reference
         self.wfdb = None
@@ -153,12 +167,10 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
             
         if fileName:
             try:
-                # Here we'd implement different file format readers
                 if fileName.endswith('.csv'):
                     self.ecg_data = np.loadtxt(fileName, delimiter=',')
                     self.sampling_rate = 250  # Assume 250Hz if not specified
                 elif fileName.endswith('.edf'):
-                    # Import pyedflib only when needed
                     import pyedflib
                     
                     # Open the EDF file
@@ -198,9 +210,6 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to load data: {str(e)}")
     
-    # Rest of methods remain the same...
-    
-    # Include all your other methods without changes
     def save_data(self):
         """Save current ECG data to file"""
         if self.ecg_data is None:
@@ -269,9 +278,15 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         # Update display
         self.update_ecg_display(data_chunk)
         
-        # Analyze for arrhythmias
-        self.analyze_ecg(data_chunk)
-    
+        # Take the last 2 seconds of ECG for analysis (2 * sampling_rate = 2000 samples)
+        analysis_window_size = int(2 * self.sampling_rate)
+        if self.data_index >= analysis_window_size:
+            analysis_data = self.ecg_data[self.data_index - analysis_window_size:self.data_index]
+        else:
+            analysis_data = self.ecg_data[:self.data_index]
+
+        self.analyze_ecg(analysis_data)
+
     def update_ecg_display(self, new_data):
         """Update the ECG plot with new data"""
         # Shift the buffer left
@@ -294,52 +309,58 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         self.heartRateLabel.setText(f"{heart_rate:.1f}")
         
         # Check for arrhythmias
-        is_tachycardia = self.detector.detect_tachycardia(heart_rate)
-        is_bradycardia = self.detector.detect_bradycardia(heart_rate)
-        is_afib = self.detector.detect_afib(data, fs=self.sampling_rate)
-        
+        if self.detector.detect_tachycardia(heart_rate):
+            self.tachycardia_detected = True
+
+        if self.detector.detect_bradycardia(heart_rate):
+            self.bradycardia_detected = True
+
+        if self.detector.detect_afib(data, fs=self.sampling_rate):
+            self.afib_detected = True
+
         # Update status labels
-        self.update_arrhythmia_status(is_tachycardia, is_bradycardia, is_afib)
+        self.update_arrhythmia_status(self.tachycardia_detected , self.bradycardia_detected , self.afib_detected)
         
         # Trigger alarm if needed
-        if (is_tachycardia or is_bradycardia or is_afib) and self.alarmEnabledCheckBox.isChecked():
+        if (self.tachycardia_detected or self.bradycardia_detected or self.afib_detected):
             self.trigger_alarm()
     
-    def update_arrhythmia_status(self, is_tachycardia, is_bradycardia, is_afib):
+    def update_arrhythmia_status(self, tachycardia_detected , bradycardia_detected  , afib_detected):
         """Update the arrhythmia status labels"""
         # Update tachycardia status
-        if is_tachycardia:
+        if tachycardia_detected:
             self.tachStatusLabel.setText("DETECTED")
             self.tachStatusLabel.setStyleSheet("color: red; font-weight: bold;")
         else:
             self.tachStatusLabel.setText("Normal")
             self.tachStatusLabel.setStyleSheet("color: green;")
-            
+
         # Update bradycardia status
-        if is_bradycardia:
+        if bradycardia_detected:
             self.bradStatusLabel.setText("DETECTED")
             self.bradStatusLabel.setStyleSheet("color: red; font-weight: bold;")
         else:
             self.bradStatusLabel.setText("Normal")
             self.bradStatusLabel.setStyleSheet("color: green;")
-            
-        # Update AFib status
-        if is_afib:
+
+        # Update afib status
+        if afib_detected:
             self.afibStatusLabel.setText("DETECTED")
             self.afibStatusLabel.setStyleSheet("color: red; font-weight: bold;")
         else:
             self.afibStatusLabel.setText("Normal")
             self.afibStatusLabel.setStyleSheet("color: green;")
-    
+
     def trigger_alarm(self):
         """Trigger the alarm for arrhythmia detection"""
         if not self.alarm_active:
             self.alarm_active = True
             self.silenceAlarmButton.setEnabled(True)
-            # In a full implementation, this would play a sound
-            # self.alarm_sound = QSound("alarm.wav")
-            # self.alarm_sound.play()
-            
+
+            if self.alarmEnabledCheckBox.isChecked():
+                self.alarm_sound = QSound("alarm.wav")
+                self.alarm_sound.play()
+                
             # Flash the screen red
             self.flash_timer = QtCore.QTimer()
             self.flash_timer.timeout.connect(self.flash_alarm)
@@ -362,19 +383,20 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
                 self.flash_timer.stop()
             self.alarmFrame.setStyleSheet("")
             self.silenceAlarmButton.setEnabled(False)
-            # if self.alarm_sound:
-            #    self.alarm_sound.stop()
+            if self.alarm_sound:
+               self.alarm_sound.stop()
     
     def reset_alarms(self):
         """Reset all alarms to normal state"""
         self.silence_alarm()
-        self.tachStatusLabel.setText("Normal")
-        self.bradStatusLabel.setText("Normal")
-        self.afibStatusLabel.setText("Normal")
-        self.tachStatusLabel.setStyleSheet("color: green;")
-        self.bradStatusLabel.setStyleSheet("color: green;")
-        self.afibStatusLabel.setStyleSheet("color: green;")
-    
+        for label in [self.tachStatusLabel, self.bradStatusLabel, self.afibStatusLabel]:
+                label.setText("Normal")
+                label.setStyleSheet("color: green;")
+
+        self.tachycardia_detected = False
+        self.bradycardia_detected = False
+        self.afib_detected = False
+
     def open_threshold_settings(self):
         """Open dialog to adjust alarm thresholds"""
         # This would be implemented as a dialog to adjust threshold values

@@ -281,7 +281,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         # Update display
         self.update_ecg_display(data_chunk)
         
-        # Take the last 15 seconds of ECG for analysis (2 * sampling_rate = 2000 samples)
+        # Take the last 10 seconds of ECG for analysis 
         analysis_window_size = int(10 * self.sampling_rate)
         if self.data_index >= analysis_window_size:
             analysis_data = self.ecg_data[self.data_index - analysis_window_size:self.data_index]
@@ -355,14 +355,6 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
             self.tachStatusLabel.setText("Normal")
             self.tachStatusLabel.setStyleSheet("color: green;")
 
-        # Update bradycardia status
-        if bradycardia_detected:
-            self.bradStatusLabel.setText("DETECTED")
-            self.bradStatusLabel.setStyleSheet("color: red; font-weight: bold;")
-        else:
-            self.bradStatusLabel.setText("Normal")
-            self.bradStatusLabel.setStyleSheet("color: green;")
-
         # Update afib status
         if afib_detected:
             self.afibStatusLabel.setText("DETECTED")
@@ -370,6 +362,15 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         else:
             self.afibStatusLabel.setText("Normal")
             self.afibStatusLabel.setStyleSheet("color: green;")
+
+         # Update bradycardia status
+        if bradycardia_detected:
+            self.bradStatusLabel.setText("DETECTED")
+            self.bradStatusLabel.setStyleSheet("color: red; font-weight: bold;")
+        else:
+            self.bradStatusLabel.setText("Normal")
+            self.bradStatusLabel.setStyleSheet("color: green;")
+
 
     def trigger_alarm(self):
         """Trigger the alarm for arrhythmia detection"""

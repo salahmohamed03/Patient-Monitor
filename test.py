@@ -280,8 +280,8 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         # Update display
         self.update_ecg_display(data_chunk)
         
-        # Take the last 2 seconds of ECG for analysis (2 * sampling_rate = 2000 samples)
-        analysis_window_size = int(15 * self.sampling_rate)
+        # Take the last 15 seconds of ECG for analysis (2 * sampling_rate = 2000 samples)
+        analysis_window_size = int(10 * self.sampling_rate)
         if self.data_index >= analysis_window_size:
             analysis_data = self.ecg_data[self.data_index - analysis_window_size:self.data_index]
         else:
@@ -322,11 +322,11 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         if self.detector.detect_tachycardia(heart_rate):
             self.tachycardia_detected = True
 
-        elif self.detector.detect_bradycardia(heart_rate):
-            self.bradycardia_detected = True
-
         elif self.detector.detect_afib(data, fs=self.sampling_rate):
             self.afib_detected = True
+
+        elif self.detector.detect_bradycardia(heart_rate):
+            self.bradycardia_detected = True
 
         # Update status labels
         self.update_arrhythmia_status(self.tachycardia_detected , self.bradycardia_detected , self.afib_detected)
@@ -372,10 +372,10 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
                 self.alarm_sound = QSound("alarm.wav")
                 self.alarm_sound.play()
                 
-            # Flash the screen red
-            self.flash_timer = QtCore.QTimer()
-            self.flash_timer.timeout.connect(self.flash_alarm)
-            self.flash_timer.start(500)  # Flash every 500ms
+            # # Flash the screen red
+            # self.flash_timer = QtCore.QTimer()
+            # self.flash_timer.timeout.connect(self.flash_alarm)
+            # self.flash_timer.start(500)  # Flash every 500ms
     
     def flash_alarm(self):
         """Flash the background of the alarm frame to indicate alarm"""

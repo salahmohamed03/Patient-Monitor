@@ -14,8 +14,8 @@ class ArrhythmiaDetector:
     
     def __init__(self):
         self.tachycardia_threshold = 100  # BPM
-        self.bradycardia_threshold = 60   # BPM
-        self.afib_threshold = 0.5         # Irregularity index threshold
+        self.bradycardia_threshold = 50   # BPM
+        self.afib_threshold = 0.2      # Irregularity index threshold
         
     def detect_heart_rate(self, ecg_signal, fs=250):
         """Calculate heart rate from ECG signal"""
@@ -30,9 +30,9 @@ class ArrhythmiaDetector:
         
         # Calculate average RR interval and convert to BPM
         rr_intervals = np.diff(r_peaks) / fs  # in seconds
-        mean_hr = 60 / np.mean(rr_intervals)  # Convert to BPM
+        self.mean_hr = 60 / np.mean(rr_intervals)  # Convert to BPM
         
-        return mean_hr
+        return self.mean_hr
 
     def detect_dominant_frequency(self, ecg_signal, fs):
         """Compute the dominant frequency of the ECG signal using Welch’s method"""
@@ -57,7 +57,7 @@ class ArrhythmiaDetector:
         filtered = signal.savgol_filter(ecg_signal, 31, 3)
         r_peaks, _ = signal.find_peaks(filtered, height=0.5*np.max(filtered), distance=fs*0.5)
         
-        if len(r_peaks) < 5:  # Need sufficient peaks for analysis
+        if len(r_peaks) < 10 or self.mean_hr < 50:  # Need sufficient peaks for analysis
             return False
             
         # Calculate RR intervals
@@ -281,7 +281,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         self.update_ecg_display(data_chunk)
         
         # Take the last 2 seconds of ECG for analysis (2 * sampling_rate = 2000 samples)
-        analysis_window_size = int(2 * self.sampling_rate)
+        analysis_window_size = int(15 * self.sampling_rate)
         if self.data_index >= analysis_window_size:
             analysis_data = self.ecg_data[self.data_index - analysis_window_size:self.data_index]
         else:
@@ -322,10 +322,10 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         if self.detector.detect_tachycardia(heart_rate):
             self.tachycardia_detected = True
 
-        if self.detector.detect_bradycardia(heart_rate):
+        elif self.detector.detect_bradycardia(heart_rate):
             self.bradycardia_detected = True
 
-        if self.detector.detect_afib(data, fs=self.sampling_rate):
+        elif self.detector.detect_afib(data, fs=self.sampling_rate):
             self.afib_detected = True
 
         # Update status labels
@@ -333,6 +333,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         
         # Trigger alarm if needed
         if (self.tachycardia_detected or self.bradycardia_detected or self.afib_detected):
+            print(heart_rate)
             self.trigger_alarm()
     
     def update_arrhythmia_status(self, tachycardia_detected , bradycardia_detected  , afib_detected):
@@ -444,7 +445,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         """Update colors of vital signs based on their values"""
         # Heart rate colors
         heart_rate = float(self.heartRateLabel.text()) if self.heartRateLabel.text() != "--" else 0
-        if heart_rate < 60 or heart_rate > 100:
+        if heart_rate < 50 or heart_rate > 100:
             self.heartRateLabel.setStyleSheet("color: red; font-weight: bold;")
         else:
             self.heartRateLabel.setStyleSheet("color: green; font-weight: bold;")

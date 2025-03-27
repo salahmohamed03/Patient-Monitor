@@ -169,6 +169,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
             
         if fileName:
             try:
+                self.ecg_display_buffer = np.zeros(self.display_buffer_size)
                 if fileName.endswith('.csv'):
                     self.ecg_data = np.loadtxt(fileName, delimiter=',')
                     self.sampling_rate = 250  # Assume 250Hz if not specified

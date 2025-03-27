@@ -308,6 +308,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         """Analyze ECG data for arrhythmias"""
         # Calculate heart rate
         heart_rate = self.detector.detect_heart_rate(data, fs=self.sampling_rate)
+        print(heart_rate)
         if heart_rate > 0:
             self.last_valid_hr = heart_rate
         else:
@@ -320,12 +321,15 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         
         # Check for arrhythmias
         if self.detector.detect_tachycardia(heart_rate):
+            self.initialize_all_to_false()
             self.tachycardia_detected = True
 
         elif self.detector.detect_bradycardia(heart_rate):
+            self.initialize_all_to_false()
             self.bradycardia_detected = True
 
         elif self.detector.detect_afib(data, fs=self.sampling_rate):
+            self.initialize_all_to_false()
             self.afib_detected = True
 
         # Update status labels
@@ -335,6 +339,11 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         if (self.tachycardia_detected or self.bradycardia_detected or self.afib_detected):
             print(heart_rate)
             self.trigger_alarm()
+
+    def initialize_all_to_false(self):
+        self.afib_detected = False
+        self.tachycardia_detected = False
+        self.bradycardia_detected = False
     
     def update_arrhythmia_status(self, tachycardia_detected , bradycardia_detected  , afib_detected):
         """Update the arrhythmia status labels"""

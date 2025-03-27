@@ -282,11 +282,13 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         self.update_ecg_display(data_chunk)
         
         # Take the last 2 seconds of ECG for analysis (2 * sampling_rate = 2000 samples)
-        analysis_window_size = int(15 * self.sampling_rate)
+        analysis_window_size = int(10 * self.sampling_rate)
         if self.data_index >= analysis_window_size:
             analysis_data = self.ecg_data[self.data_index - analysis_window_size:self.data_index]
         else:
             analysis_data = self.ecg_data[:self.data_index]
+
+        print("len is: ", len(analysis_data))
 
         self.analyze_ecg(analysis_data)
 
@@ -461,7 +463,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
             self.heartRateLabel.setStyleSheet("color: green; font-weight: bold;")
         
         # Blood pressure colors
-        if self.bp_systolic > 140 or self.bp_diastolic > 90 or self.bp_systolic < 90 or self.bp_diastolic < 60:
+        if self.bp_systolic > 130 or self.bp_diastolic > 80 or self.bp_systolic < 90 or self.bp_diastolic < 60:
             self.bpLabel.setStyleSheet("color: red; font-weight: bold;")
         else:
             self.bpLabel.setStyleSheet("color: green; font-weight: bold;")
@@ -473,7 +475,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
             self.spo2Label.setStyleSheet("color: green; font-weight: bold;")
         
         # Temperature colors
-        if self.temperature > 37.5 or self.temperature < 36.0:
+        if self.temperature > 37.4 or self.temperature < 35.7:
             self.tempLabel.setStyleSheet("color: red; font-weight: bold;")
         else:
             self.tempLabel.setStyleSheet("color: green; font-weight: bold;")

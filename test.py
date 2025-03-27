@@ -169,6 +169,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
             
         if fileName:
             try:
+                self.ecg_display_buffer = np.zeros(self.display_buffer_size)
                 if fileName.endswith('.csv'):
                     self.ecg_data = np.loadtxt(fileName, delimiter=',')
                     self.sampling_rate = 250  # Assume 250Hz if not specified
@@ -308,6 +309,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         """Analyze ECG data for arrhythmias"""
         # Calculate heart rate
         heart_rate = self.detector.detect_heart_rate(data, fs=self.sampling_rate)
+        print(heart_rate)
         if heart_rate > 0:
             self.last_valid_hr = heart_rate
         else:
@@ -320,9 +322,11 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         
         # Check for arrhythmias
         if self.detector.detect_tachycardia(heart_rate):
+            self.initialize_all_to_false()
             self.tachycardia_detected = True
 
         elif self.detector.detect_afib(data, fs=self.sampling_rate):
+            self.initialize_all_to_false()
             self.afib_detected = True
 
         elif self.detector.detect_bradycardia(heart_rate):
@@ -335,6 +339,11 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         if (self.tachycardia_detected or self.bradycardia_detected or self.afib_detected):
             print(heart_rate)
             self.trigger_alarm()
+
+    def initialize_all_to_false(self):
+        self.afib_detected = False
+        self.tachycardia_detected = False
+        self.bradycardia_detected = False
     
     def update_arrhythmia_status(self, tachycardia_detected , bradycardia_detected  , afib_detected):
         """Update the arrhythmia status labels"""
@@ -372,10 +381,10 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
                 self.alarm_sound = QSound("alarm.wav")
                 self.alarm_sound.play()
                 
-            # # Flash the screen red
-            # self.flash_timer = QtCore.QTimer()
-            # self.flash_timer.timeout.connect(self.flash_alarm)
-            # self.flash_timer.start(500)  # Flash every 500ms
+            # Flash the screen red
+            self.flash_timer = QtCore.QTimer()
+            self.flash_timer.timeout.connect(self.flash_alarm)
+            self.flash_timer.start(500)  # Flash every 500ms
     
     def flash_alarm(self):
         """Flash the background of the alarm frame to indicate alarm"""

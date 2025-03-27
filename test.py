@@ -281,7 +281,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         # Update display
         self.update_ecg_display(data_chunk)
         
-        # Take the last 2 seconds of ECG for analysis (2 * sampling_rate = 2000 samples)
+        # Take the last 15 seconds of ECG for analysis (2 * sampling_rate = 2000 samples)
         analysis_window_size = int(10 * self.sampling_rate)
         if self.data_index >= analysis_window_size:
             analysis_data = self.ecg_data[self.data_index - analysis_window_size:self.data_index]
@@ -327,13 +327,12 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
             self.initialize_all_to_false()
             self.tachycardia_detected = True
 
-        elif self.detector.detect_bradycardia(heart_rate):
-            self.initialize_all_to_false()
-            self.bradycardia_detected = True
-
         elif self.detector.detect_afib(data, fs=self.sampling_rate):
             self.initialize_all_to_false()
             self.afib_detected = True
+
+        elif self.detector.detect_bradycardia(heart_rate):
+            self.bradycardia_detected = True
 
         # Update status labels
         self.update_arrhythmia_status(self.tachycardia_detected , self.bradycardia_detected , self.afib_detected)

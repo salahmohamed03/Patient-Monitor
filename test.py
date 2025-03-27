@@ -309,7 +309,6 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         """Analyze ECG data for arrhythmias"""
         # Calculate heart rate
         heart_rate = self.detector.detect_heart_rate(data, fs=self.sampling_rate)
-        print(heart_rate)
         if heart_rate > 0:
             self.last_valid_hr = heart_rate
         else:
@@ -330,6 +329,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
             self.afib_detected = True
 
         elif self.detector.detect_bradycardia(heart_rate):
+            self.initialize_all_to_false()
             self.bradycardia_detected = True
 
         # Update status labels
@@ -461,7 +461,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
             self.heartRateLabel.setStyleSheet("color: green; font-weight: bold;")
         
         # Blood pressure colors
-        if self.bp_systolic > 140 or self.bp_diastolic > 90 or self.bp_systolic < 90 or self.bp_diastolic < 60:
+        if self.bp_systolic > 130 or self.bp_diastolic > 80 or self.bp_systolic < 90 or self.bp_diastolic < 60:
             self.bpLabel.setStyleSheet("color: red; font-weight: bold;")
         else:
             self.bpLabel.setStyleSheet("color: green; font-weight: bold;")
@@ -473,7 +473,7 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
             self.spo2Label.setStyleSheet("color: green; font-weight: bold;")
         
         # Temperature colors
-        if self.temperature > 37.5 or self.temperature < 36.0:
+        if self.temperature > 37.4 or self.temperature < 35.7:
             self.tempLabel.setStyleSheet("color: red; font-weight: bold;")
         else:
             self.tempLabel.setStyleSheet("color: green; font-weight: bold;")

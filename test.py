@@ -82,6 +82,8 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         
         # Initialize detector
         self.detector = ArrhythmiaDetector()
+        self.last_valid_hr = None
+
         
         # Replace QGraphicsView with pyqtgraph PlotWidget
         self.ecgPlot = pg.PlotWidget()
@@ -306,6 +308,14 @@ class ECGMonitoringSystem(QtWidgets.QMainWindow):
         """Analyze ECG data for arrhythmias"""
         # Calculate heart rate
         heart_rate = self.detector.detect_heart_rate(data, fs=self.sampling_rate)
+        if heart_rate > 0:
+            self.last_valid_hr = heart_rate
+        else:
+            if self.last_valid_hr is not None:
+                heart_rate = self.last_valid_hr
+            else:
+                heart_rate = 0  # fallback if no valid HR yet
+
         self.heartRateLabel.setText(f"{heart_rate:.1f}")
         
         # Check for arrhythmias
